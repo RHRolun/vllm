@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Make sure ignore_eos works.
 
 Run `pytest tests/samplers/test_ignore_eos.py`.
@@ -9,7 +10,7 @@ from vllm import SamplingParams
 
 # We also test with llama because it has generation_config to specify EOS
 # (past regression).
-MODELS = ["facebook/opt-125m", "meta-llama/Llama-2-7b-hf"]
+MODELS = ["facebook/opt-125m", "meta-llama/Llama-3.2-1B-Instruct"]
 
 
 @pytest.mark.parametrize("model", MODELS)
@@ -22,11 +23,12 @@ def test_ignore_eos(
     dtype: str,
     max_tokens: int,
 ) -> None:
-    vllm_model = vllm_runner(model, dtype=dtype)
-    sampling_params = SamplingParams(max_tokens=max_tokens, ignore_eos=True)
+    with vllm_runner(model, dtype=dtype) as vllm_model:
+        sampling_params = SamplingParams(max_tokens=max_tokens,
+                                         ignore_eos=True)
 
-    for prompt in example_prompts:
-        ignore_eos_output = vllm_model.model.generate(
-            prompt, sampling_params=sampling_params)
-        output_length = len(ignore_eos_output[0].outputs[0].token_ids)
-        assert output_length == max_tokens
+        for prompt in example_prompts:
+            ignore_eos_output = vllm_model.model.generate(
+                prompt, sampling_params=sampling_params)
+            output_length = len(ignore_eos_output[0].outputs[0].token_ids)
+            assert output_length == max_tokens
